@@ -114,12 +114,14 @@ function useCalcs(v){
     const DifCaV=CaO2&&CvO2?r(CaO2-CvO2,2):null;
     const DO2I=IC&&CaO2?r(IC*CaO2*10,0):null;
     const VO2I=IC&&DifCaV?r(IC*DifCaV*10,0):null;
+    const DO2=GC&&CaO2&&!IC?r(GC*CaO2*10,0):null;
+    const VO2=GC&&DifCaV&&!IC?r(GC*DifCaV*10,0):null;
     const O2ER=CaO2&&CvO2?r((CaO2-CvO2)/CaO2*100,1):null;
     const DeltaCO2=pvco2&&paco2?r(pvco2-paco2,1):null;
     const DepLac=lac1&&lac2?r((lac1-lac2)/lac1*100,1):null;
     const RVS=PAM&&GC?r((PAM-pvc_efectiva)*79.92/GC,1):null;
     const CPO=PAM&&GC?r(PAM*GC/451,2):null;
-    return{PAM,PP,iShock,SaFi,BSA,ATSVI,ATSVI_eco,ATSVI_est,DTSVI_est,atsvi_method,GC,IC,FEVI_epss,FEVI_simp,FAC,CFA,CaO2,CvO2,DifCaV,DO2I,VO2I,O2ER,DeltaCO2,DepLac,RVS,CPO,IC_VCI,ID_VCI,DELTA_VCI,PVC_est,pvc_est_label,pvc_efectiva,pvc_fuente,vci_max,vci_min,vci_modo};
+    return{PAM,PP,iShock,SaFi,BSA,ATSVI,ATSVI_eco,ATSVI_est,DTSVI_est,atsvi_method,GC,IC,FEVI_epss,FEVI_simp,FAC,CFA,CaO2,CvO2,DifCaV,DO2I,VO2I,DO2,VO2,O2ER,DeltaCO2,DepLac,RVS,CPO,IC_VCI,ID_VCI,DELTA_VCI,PVC_est,pvc_est_label,pvc_efectiva,pvc_fuente,vci_max,vci_min,vci_modo};
   },[v]);
 }
 
@@ -220,14 +222,14 @@ function HemoResults({c,v}){
           {n(v.rvlv)!==null&&<Row label="Relación VD/VI" value={n(v.rvlv)} color={n(v.rvlv)<0.6?"green":n(v.rvlv)<1.0?"yellow":"red"} normal="VN <0.6"/>}
         </Card>
       </>}
-      {(CaO2||DO2I||O2ER||DeltaCO2||RVS||CPO)&&<>
+      {(CaO2||DO2I||VO2I||DO2||VO2||O2ER||DeltaCO2||RVS||CPO)&&<>
         <SL text="Microhemodinamia"/><Card>
           {CaO2!==null&&<Row label="CaO₂" value={CaO2} unit="mL/dL" color={CaO2>=17?"green":CaO2>=14?"yellow":"red"} normal="17–20"/>}
           {CvO2!==null&&<Row label="CvO₂" value={CvO2} unit="mL/dL" color={CvO2>=12?"green":CvO2>=10?"yellow":"red"} normal="12–15"/>}
           {DifCaV!==null&&<Row label="Dif Ca–Cv O₂" value={DifCaV} unit="mL/dL" color={DifCaV>=4&&DifCaV<=5?"green":"yellow"} normal="4–5"/>}
           {DO2I!==null&&<Row label="DO₂I (aporte O₂)" value={DO2I} unit="mL/min/m²" color={DO2I>=550?"green":DO2I>=400?"yellow":"red"} normal="550–650"/>}
-          {VO2I!==null&&<Row label="VO₂I (consumo O₂)" value={VO2I} unit="mL/min/m²" color={VO2I>=115&&VO2I<=165?"green":"yellow"} normal="115–165"/>}
-          {O2ER!==null&&<Row label="Extracción O₂" value={O2ER} unit="%" color={O2ER<=30?"green":O2ER<=40?"yellow":"red"} normal="20–30%"/>}
+          {VO2I!==null&&<Row label="VO₂I (consumo O₂)" value={VO2I} unit="mL/min/m²" color={VO2I>=115&&VO2I<=165?"green":"yellow"} normal="115–165"/>}{DO2!==null&&<Row label="DO₂ (aporte O₂)" value={DO2} unit="mL/min" color={DO2>=900?"green":DO2>=600?"yellow":"red"} normal="900–1100"/>}{VO2!==null&&<Row label="VO₂ (consumo O₂)" value={VO2} unit="mL/min" color={VO2>=200&&VO2<=350?"green":"yellow"} normal="200–350"/>}
+          {O2ER!==null&&<Row label="Extracción O₂" value={O2ER} unit="%" color={O2ER>=20&&O2ER<=30?"green":O2ER>30&&O2ER<=40?"yellow":"red"} normal="20–30%"/>}
           {DeltaCO2!==null&&<Row label="ΔCO₂ venosa–arterial" value={DeltaCO2} unit="mmHg" color={DeltaCO2<6?"green":DeltaCO2<8?"yellow":"red"} normal="<6 mmHg"/>}
           {DepLac!==null&&<Row label="Depuración Lactato 2h" value={DepLac} unit="%" color={DepLac>=10?"green":DepLac>=5?"yellow":"red"} normal=">10% en 2h"/>}
           {(RVS||CPO)&&<div style={{marginTop:8}}><G2>{RVS&&<BM label="RVS" value={RVS} unit="WU" color={RVS>=750&&RVS<=1500?T.green:RVS<750?T.yellow:T.red}/>}{CPO&&<BM label="CPO" value={CPO} unit="W" color={CPO>=0.6?T.green:CPO>=0.4?T.yellow:T.red}/>}</G2></div>}
