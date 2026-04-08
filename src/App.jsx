@@ -158,7 +158,7 @@ function HemoInputs({v,set}){
 
 // ─── HEMO RESULTS ─────────────────────────────────────────────────────────────
 function HemoResults({c,v}){
-  const{PAM,PP,iShock,SaFi,BSA,ATSVI,ATSVI_eco,DTSVI_est,atsvi_method,GC,IC,FEVI_epss,FEVI_simp,FAC,CFA,CaO2,CvO2,DifCaV,DO2I,VO2I,O2ER,DeltaCO2,DepLac,RVS,CPO,IC_VCI,ID_VCI,DELTA_VCI,PVC_est,pvc_est_label,pvc_fuente,vci_max,vci_min,vci_modo}=c;
+  const{PAM,PP,iShock,SaFi,BSA,ATSVI,ATSVI_eco,DTSVI_est,atsvi_method,GC,IC,FEVI_epss,FEVI_simp,FAC,CFA,CaO2,CvO2,DifCaV,DO2I,VO2I,DO2,VO2,O2ER,DeltaCO2,DepLac,RVS,CPO,IC_VCI,ID_VCI,DELTA_VCI,PVC_est,pvc_est_label,pvc_fuente,vci_max,vci_min,vci_modo}=c;
   const alerts=[];
   if(IC!==null&&IC<2.2)alerts.push({color:"red",icon:"⚠️",title:`IC bajo — ${IC} L/min/m²`,body:"Umbral shock cardiogénico · Evaluar inotrópico"});
   if(CPO!==null&&CPO<0.6)alerts.push({color:"red",icon:"⚠️",title:`CPO bajo — ${CPO} W`,body:"Predictor independiente mortalidad en shock"});
