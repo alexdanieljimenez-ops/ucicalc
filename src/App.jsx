@@ -91,9 +91,8 @@ function useCalcs(v){
     const ATSVI=ATSVI_eco||ATSVI_est;
     const atsvi_method=ATSVI_eco?"medido":ATSVI_est?"estimado":null;
     const gc_dir=n(v.gc_directo);
-    const GC_vti=vti&&ATSVI&&fc?r(vti*ATSVI*fc/1000,2):null;
-    const GC=gc_dir||GC_vti;
-    const gc_fuente=gc_dir?"directo/ECMO":GC_vti?"eco VTI":null;
+    const GC=gc_dir||(vti&&ATSVI&&fc?r(vti*ATSVI*fc/1000,2):null);
+    const gc_fuente=gc_dir?"directo/ECMO":(!gc_dir&&vti)?"eco VTI":null;
     const IC=GC&&BSA?r(GC/BSA,2):null;
     const FEVI_epss=epss!==null?r(Math.max(0,Math.min(100,75.5-2.5*epss)),1):null;
     const FEVI_simp=n(v.fevi_simpson);
@@ -124,7 +123,7 @@ function useCalcs(v){
     const DepLac=lac1&&lac2?r((lac1-lac2)/lac1*100,1):null;
     const RVS=PAM&&GC?r((PAM-pvc_efectiva)*79.92/GC,1):null;
     const CPO=PAM&&GC?r(PAM*GC/451,2):null;
-    return{PAM,PP,iShock,SaFi,BSA,ATSVI,ATSVI_eco,ATSVI_est,DTSVI_est,atsvi_method,GC,GC_vti,gc_fuente,IC,FEVI_epss,FEVI_simp,FAC,CFA,CaO2,CvO2,DifCaV,DO2I,VO2I,DO2,VO2,O2ER,DeltaCO2,DepLac,RVS,CPO,IC_VCI,ID_VCI,DELTA_VCI,PVC_est,pvc_est_label,pvc_efectiva,pvc_fuente,vci_max,vci_min,vci_modo};
+    return{PAM,PP,iShock,SaFi,BSA,ATSVI,ATSVI_eco,ATSVI_est,DTSVI_est,atsvi_method,GC,gc_fuente,IC,FEVI_epss,FEVI_simp,FAC,CFA,CaO2,CvO2,DifCaV,DO2I,VO2I,DO2,VO2,O2ER,DeltaCO2,DepLac,RVS,CPO,IC_VCI,ID_VCI,DELTA_VCI,PVC_est,pvc_est_label,pvc_efectiva,pvc_fuente,vci_max,vci_min,vci_modo};
   },[v]);
 }
 
@@ -166,7 +165,7 @@ function HemoInputs({v,set}){
 
 // ─── HEMO RESULTS ─────────────────────────────────────────────────────────────
 function HemoResults({c,v}){
-  const{PAM,PP,iShock,SaFi,BSA,ATSVI,ATSVI_eco,DTSVI_est,atsvi_method,GC,GC_vti,gc_fuente,IC,FEVI_epss,FEVI_simp,FAC,CFA,CaO2,CvO2,DifCaV,DO2I,VO2I,DO2,VO2,O2ER,DeltaCO2,DepLac,RVS,CPO,IC_VCI,ID_VCI,DELTA_VCI,PVC_est,pvc_est_label,pvc_fuente,vci_max,vci_min,vci_modo}=c;
+  const{PAM,PP,iShock,SaFi,BSA,ATSVI,ATSVI_eco,DTSVI_est,atsvi_method,GC,gc_fuente,IC,FEVI_epss,FEVI_simp,FAC,CFA,CaO2,CvO2,DifCaV,DO2I,VO2I,DO2,VO2,O2ER,DeltaCO2,DepLac,RVS,CPO,IC_VCI,ID_VCI,DELTA_VCI,PVC_est,pvc_est_label,pvc_fuente,vci_max,vci_min,vci_modo}=c;
   const alerts=[];
   if(IC!==null&&IC<2.2)alerts.push({color:"red",icon:"⚠️",title:`IC bajo — ${IC} L/min/m²`,body:"Umbral shock cardiogénico · Evaluar inotrópico"});
   if(CPO!==null&&CPO<0.6)alerts.push({color:"red",icon:"⚠️",title:`CPO bajo — ${CPO} W`,body:"Predictor independiente mortalidad en shock"});
