@@ -251,15 +251,21 @@ function HemoResults({c,v}){
   </div>);
 }
 
-function HemoTab({state,setState}){
+function HemoTab({state,setState,printMode}){
   const[view,setView]=useState("datos");
   const set=k=>val=>setState(d=>({...d,[k]:val}));
   const c=useCalcs(state);
+  if(printMode){
+    return(<div>
+      <div className="print-section"><HemoInputs v={state} set={set}/></div>
+      <div className="print-section" style={{marginTop:24}}><HemoResults c={c} v={state}/></div>
+    </div>);
+  }
   return(<div><div style={{padding:"0 0 14px"}}><VT value={view} onChange={setView}/></div>{view==="datos"?<HemoInputs v={state} set={set}/>:<HemoResults c={c} v={state}/>}</div>);
 }
 
 // ─── VENT TAB ─────────────────────────────────────────────────────────────────
-function VentTab({state,setState}){
+function VentTab({state,setState,printMode}){
   const[view,setView]=useState("datos");
   const v=state,set=k=>val=>setState(d=>({...d,[k]:val}));
   const IBW=useMemo(()=>{const h=n(v.altura);if(!h)return null;return r(v.sexo==="M"?50+0.91*(h-152.4):45.5+0.91*(h-152.4),1);},[v.altura,v.sexo]);
@@ -278,8 +284,8 @@ function VentTab({state,setState}){
   if(n(v.p01)!==null&&n(v.p01)<-3)predFallo.push(`P0.1 ${v.p01} cmH₂O (meta ≥ −3)`);
   if(n(v.excursion_diaf)!==null&&n(v.excursion_diaf)<2)predFallo.push(`Excursión diafragma ${v.excursion_diaf} cm (meta >2 cm)`);
   return(<div>
-    <div style={{padding:"0 0 14px"}}><VT value={view} onChange={setView}/></div>
-    {view==="datos"?(<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:16}}>
+    {!printMode&&<div style={{padding:"0 0 14px"}}><VT value={view} onChange={setView}/></div>}
+    {(view==="datos"&&!printMode)?(<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:16}}>
       <div><SL text="Paciente"/><Card><G2><Sel label="Sexo" value={v.sexo} onChange={set("sexo")} options={[{v:"M",l:"Masculino"},{v:"F",l:"Femenino"}]}/><Inp label="Talla" unit="cm" value={v.altura} onChange={set("altura")}/></G2></Card>
       <SL text="Parámetros Ventilatorios"/><Card><G2><Inp label="VT" unit="mL" value={v.vt} onChange={set("vt")} hint="Meta: 6 mL/kg IBW"/><Inp label="FR" unit="rpm" value={v.fr} onChange={set("fr")}/><Inp label="PEEP" unit="cmH₂O" value={v.peep} onChange={set("peep")}/><Inp label="FiO₂" unit="%" value={v.fio2} onChange={set("fio2")}/><Inp label="P. Pico" unit="cmH₂O" value={v.ppico} onChange={set("ppico")}/><Inp label="P. Plateau" unit="cmH₂O" value={v.pplat} onChange={set("pplat")} hint="Meta ≤30"/></G2></Card></div>
       <div><SL text="Gasometría"/><Card><G2><Inp label="PaO₂" unit="mmHg" value={v.pao2} onChange={set("pao2")}/><Inp label="SpO₂" unit="%" value={v.spo2} onChange={set("spo2")}/></G2></Card>
@@ -334,7 +340,7 @@ function VexusTab({state,setState}){
 }
 
 // ─── NEURO TAB ────────────────────────────────────────────────────────────────
-function NeuroTab({state,setState}){
+function NeuroTab({state,setState,printMode}){
   const[view,setView]=useState("datos");
   const v=state,set=k=>val=>setState(d=>({...d,[k]:val}));
   const IP=useMemo(()=>{const vps=n(v.vps),vfd=n(v.vfd),vm=n(v.vm);if(vps===null||vfd===null||!vm)return null;return r((vps-vfd)/vm,2);},[v.vps,v.vfd,v.vm]);
@@ -343,8 +349,19 @@ function NeuroTab({state,setState}){
   const Lind=useMemo(()=>{const vm=n(v.vm),aci=n(v.vm_aci);if(!vm||!aci)return null;return r(vm/aci,2);},[v.vm,v.vm_aci]);
   const DLM=useMemo(()=>{const a=n(v.dlm_a),b=n(v.dlm_b);if(!a||!b)return null;return r(Math.abs(a-b)/2,1);},[v.dlm_a,v.dlm_b]);
   return(<div>
-    <div style={{padding:"0 0 14px"}}><VT value={view} onChange={setView}/></div>
-    {view==="datos"?(<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:16}}>
+    {!printMode&&<div style={{padding:"0 0 14px"}}><VT value={view} onChange={setView}/></div>}
+    {printMode&&<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:16}}>
+      <div><SL text="Doppler Transcraneal — ACM"/><Card><G2><Inp label="VPS (pico sistólico)" unit="cm/s" value={v.vps} onChange={set("vps")} hint="VN <80 cm/s"/><Inp label="VFD (fin diástole)" unit="cm/s" value={v.vfd} onChange={set("vfd")}/><Inp label="VM (velocidad media)" unit="cm/s" value={v.vm} onChange={set("vm")}/><Inp label="PAM" unit="mmHg" value={v.pam} onChange={set("pam")} hint="Para PPC estimada"/></G2></Card></div>
+      <div><SL text="Resultados DTC"/><Card>
+        {n(v.vps)!==null&&<Row label="VPS ACM" value={n(v.vps)} unit="cm/s" color={n(v.vps)<80?"green":n(v.vps)<160?"yellow":"red"} normal="VN <80 cm/s"/>}
+        {IP!==null&&<Row label="IP" value={IP} color={IP>=0.6&&IP<=1.1?"green":IP>1.1&&IP<=1.4?"yellow":"red"} normal="VN 0.6–1.1"/>}
+        {PPC!==null&&<Row label="PPC estimada" value={PPC} unit="mmHg" color={PPC>=60?"green":PPC>=50?"yellow":"red"} normal="≥60 mmHg"/>}
+        {PIC!==null&&<Row label="PIC estimada" value={PIC} unit="mmHg" color={PIC<=15?"green":PIC<=20?"yellow":"red"} normal="≤15 mmHg"/>}
+        {Lind!==null&&<Row label="Lindegaard" value={Lind} color={Lind<3?"yellow":Lind<=6?"yellow":"red"} normal="Hiperemia <3 · Espasmo >6"/>}
+        {DLM!==null&&<Row label="DLM" value={DLM} unit="cm" color={DLM<0.5?"green":DLM<1?"yellow":"red"} normal="VN <0.5 cm"/>}
+      </Card></div>
+    </div>}
+    {!printMode&&(view==="datos")?(<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:16}}>
       <div><SL text="Doppler Transcraneal — ACM"/><Card><G2><Inp label="VPS (pico sistólico)" unit="cm/s" value={v.vps} onChange={set("vps")} hint="VN <80 cm/s"/><Inp label="VFD (fin diástole)" unit="cm/s" value={v.vfd} onChange={set("vfd")}/><Inp label="VM (velocidad media)" unit="cm/s" value={v.vm} onChange={set("vm")}/><Inp label="PAM" unit="mmHg" value={v.pam} onChange={set("pam")} hint="Para PPC estimada"/></G2></Card></div>
       <div><SL text="Índice de Lindegaard"/><Card><Inp label="VM Arteria Carótida Interna (ACI)" unit="cm/s" value={v.vm_aci} onChange={set("vm_aci")} hint="Doppler a nivel mandibular"/></Card>
       <SL text="Desviación Línea Media"/><Card><G2><Inp label="A (temporal → 3er ventrículo)" unit="cm" value={v.dlm_a} onChange={set("dlm_a")}/><Inp label="B (temporal contralateral)" unit="cm" value={v.dlm_b} onChange={set("dlm_b")}/></G2><div style={{marginTop:8,fontSize:12,color:T.label}}>DLM = |A − B| / 2</div></Card></div>
@@ -814,13 +831,14 @@ const INIT={
 
 export default function App(){
   const[tab,setTab]=useState("hemo");
+  const[printMode,setPrintMode]=useState(false);
   const[states,setStates]=useState(INIT);
   const[pac,setPac]=useState({nombre:"",hc:"",cama:"",fecha:new Date().toISOString().split("T")[0]});
   const setP=k=>val=>setPac(d=>({...d,[k]:val}));
   const setTabState=tabId=>updater=>setStates(s=>({...s,[tabId]:typeof updater==="function"?updater(s[tabId]):updater}));
 
   return(<div style={{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif"}}>
-    <style>{`*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}input[type=number]{-moz-appearance:textfield}@media print{button{display:none}}select{appearance:none;-webkit-appearance:none}`}</style>
+    <style>{`*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}input[type=number]{-moz-appearance:textfield}select{appearance:none;-webkit-appearance:none}@media print{button{display:none!important}.no-print{display:none!important}body{background:white!important}}`}</style>
 
     {/* HEADER */}
     <div style={{background:"rgba(242,242,247,0.97)",borderBottom:`1px solid ${T.border}`,position:"sticky",top:0,zIndex:20,backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)"}}>
@@ -828,7 +846,10 @@ export default function App(){
         {/* Top row */}
         <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:10}}>
           <div><div style={{fontSize:24,fontWeight:800,letterSpacing:"-0.5px",color:T.text,lineHeight:1}}>UCI<span style={{color:ACCENT}}>calc</span></div><div style={{fontSize:11,color:T.label,marginTop:2}}>Medicina Crítica</div></div>
-          <button onClick={()=>window.print()} style={{background:ACCENT,color:"white",border:"none",borderRadius:10,padding:"8px 16px",fontSize:13,fontWeight:600,cursor:"pointer"}}>🖨 PDF</button>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            {printMode&&<div style={{fontSize:11,color:T.label,textAlign:"right"}}><div style={{fontWeight:600,color:T.text}}>{new Date().toLocaleDateString("es-EC",{day:"2-digit",month:"2-digit",year:"numeric"})}</div><div>{new Date().toLocaleTimeString("es-EC",{hour:"2-digit",minute:"2-digit"})}</div></div>}
+            <button onClick={()=>{setPrintMode(true);setTimeout(()=>{window.print();setPrintMode(false);},300)}} style={{background:ACCENT,color:"white",border:"none",borderRadius:10,padding:"8px 16px",fontSize:13,fontWeight:600,cursor:"pointer"}}>🖨 PDF</button>
+          </div>
         </div>
 
         {/* Paciente — responsive */}
@@ -840,7 +861,7 @@ export default function App(){
         </div>
 
         {/* Tabs — scroll horizontal en móvil */}
-        <div style={{display:"flex",borderBottom:`1px solid ${T.border}`,overflowX:"auto",gap:0}}>
+        <div className={printMode?"no-print":""} style={{display:"flex",borderBottom:`1px solid ${T.border}`,overflowX:"auto",gap:0}}>
           {TABS.map(t=>(
             <button key={t.id} onClick={()=>setTab(t.id)} style={{display:"flex",alignItems:"center",gap:6,padding:"9px clamp(10px,2vw,20px)",fontSize:clamp(11,13),fontWeight:600,border:"none",cursor:"pointer",background:"transparent",color:tab===t.id?ACCENT:T.label,borderBottom:tab===t.id?`2px solid ${ACCENT}`:"2px solid transparent",transition:"all 0.15s",whiteSpace:"nowrap"}}>
               <span style={{fontSize:15}}>{t.icon}</span>
@@ -853,10 +874,10 @@ export default function App(){
 
     {/* CONTENT */}
     <div style={{maxWidth:1280,margin:"0 auto",padding:"16px clamp(12px,3vw,24px) 60px"}}>
-      {tab==="hemo"&&<HemoTab state={states.hemo} setState={setTabState("hemo")}/>}
-      {tab==="vent"&&<VentTab state={states.vent} setState={setTabState("vent")}/>}
+      {tab==="hemo"&&<HemoTab state={states.hemo} setState={setTabState("hemo")} printMode={printMode}/>}
+      {tab==="vent"&&<VentTab state={states.vent} setState={setTabState("vent")} printMode={printMode}/>}
       {tab==="vexus"&&<VexusTab state={states.vexus} setState={setTabState("vexus")}/>}
-      {tab==="neuro"&&<NeuroTab state={states.neuro} setState={setTabState("neuro")}/>}
+      {tab==="neuro"&&<NeuroTab state={states.neuro} setState={setTabState("neuro")} printMode={printMode}/>}
       {tab==="farmacos"&&<FarmacosTab state={states.farmacos} setState={setTabState("farmacos")}/>}
     </div>
 
