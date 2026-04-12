@@ -90,7 +90,10 @@ function useCalcs(v){
     const ATSVI_est=DTSVI_est?r(((DTSVI_est/10)**2)*0.785,2):null;
     const ATSVI=ATSVI_eco||ATSVI_est;
     const atsvi_method=ATSVI_eco?"medido":ATSVI_est?"estimado":null;
-    const GC=vti&&ATSVI&&fc?r(vti*ATSVI*fc/1000,2):null;
+    const gc_dir=n(v.gc_directo);
+    const GC_vti=vti&&ATSVI&&fc?r(vti*ATSVI*fc/1000,2):null;
+    const GC=gc_dir||GC_vti;
+    const gc_fuente=gc_dir?"directo/ECMO":GC_vti?"eco VTI":null;
     const IC=GC&&BSA?r(GC/BSA,2):null;
     const FEVI_epss=epss!==null?r(Math.max(0,Math.min(100,75.5-2.5*epss)),1):null;
     const FEVI_simp=n(v.fevi_simpson);
@@ -121,7 +124,7 @@ function useCalcs(v){
     const DepLac=lac1&&lac2?r((lac1-lac2)/lac1*100,1):null;
     const RVS=PAM&&GC?r((PAM-pvc_efectiva)*79.92/GC,1):null;
     const CPO=PAM&&GC?r(PAM*GC/451,2):null;
-    return{PAM,PP,iShock,SaFi,BSA,ATSVI,ATSVI_eco,ATSVI_est,DTSVI_est,atsvi_method,GC,IC,FEVI_epss,FEVI_simp,FAC,CFA,CaO2,CvO2,DifCaV,DO2I,VO2I,DO2,VO2,O2ER,DeltaCO2,DepLac,RVS,CPO,IC_VCI,ID_VCI,DELTA_VCI,PVC_est,pvc_est_label,pvc_efectiva,pvc_fuente,vci_max,vci_min,vci_modo};
+    return{PAM,PP,iShock,SaFi,BSA,ATSVI,ATSVI_eco,ATSVI_est,DTSVI_est,atsvi_method,GC,GC_vti,gc_fuente,IC,FEVI_epss,FEVI_simp,FAC,CFA,CaO2,CvO2,DifCaV,DO2I,VO2I,DO2,VO2,O2ER,DeltaCO2,DepLac,RVS,CPO,IC_VCI,ID_VCI,DELTA_VCI,PVC_est,pvc_est_label,pvc_efectiva,pvc_fuente,vci_max,vci_min,vci_modo};
   },[v]);
 }
 
@@ -130,6 +133,11 @@ function HemoInputs({v,set}){
   return(<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:16}}>
     <div>
       <SL text="Signos Vitales"/><Card><G2><Inp label="FC" unit="lpm" value={v.fc} onChange={set("fc")}/><Inp label="SpO₂" unit="%" value={v.spo2} onChange={set("spo2")}/><Inp label="PAS" unit="mmHg" value={v.pas} onChange={set("pas")}/><Inp label="PAD" unit="mmHg" value={v.pad} onChange={set("pad")}/><Inp label="FiO₂" unit="%" value={v.fio2_basic} onChange={set("fio2_basic")} hint="Aire ambiental = 21%"/></G2></Card>
+      <SL text="Gasto Cardíaco Directo"/>
+      <Card>
+        <Inp label="GC directo (ECMO / termodilución / Fick)" unit="L/min" value={v.gc_directo} onChange={set("gc_directo")} hint="Opcional — tiene prioridad sobre VTI eco"/>
+        {v.gc_directo&&<div style={{marginTop:8,padding:"8px 12px",background:"#E0F2FE",borderRadius:8,fontSize:12,color:"#0E7490",fontWeight:600}}>✓ GC directo activo — VTI eco ignorado para cálculos</div>}
+      </Card>
       <SL text="Antropometría"/><Card><G2><Inp label="Talla" unit="cm" value={v.altura} onChange={set("altura")}/><Inp label="Peso" unit="kg" value={v.peso} onChange={set("peso")}/></G2></Card>
       <SL text="Gasometría Arterial"/><Card><G2><Inp label="PaO₂" unit="mmHg" value={v.pao2} onChange={set("pao2")}/><Inp label="PaCO₂" unit="mmHg" value={v.paco2} onChange={set("paco2")}/><Inp label="SaO₂" unit="%" value={v.sao2} onChange={set("sao2")} hint="Si difiere de SpO₂"/><Inp label="HCO₃" unit="mEq/L" value={v.hco3a} onChange={set("hco3a")}/></G2></Card>
       <SL text="Gasometría Venosa"/><Card><G2><Inp label="SvO₂ / ScvO₂" unit="%" value={v.svo2} onChange={set("svo2")} hint="VN >65% / >70%"/><Inp label="PvCO₂" unit="mmHg" value={v.pvco2} onChange={set("pvco2")}/><Inp label="PvO₂" unit="mmHg" value={v.pvo2} onChange={set("pvo2")}/></G2></Card>
@@ -158,7 +166,7 @@ function HemoInputs({v,set}){
 
 // ─── HEMO RESULTS ─────────────────────────────────────────────────────────────
 function HemoResults({c,v}){
-  const{PAM,PP,iShock,SaFi,BSA,ATSVI,ATSVI_eco,DTSVI_est,atsvi_method,GC,IC,FEVI_epss,FEVI_simp,FAC,CFA,CaO2,CvO2,DifCaV,DO2I,VO2I,DO2,VO2,O2ER,DeltaCO2,DepLac,RVS,CPO,IC_VCI,ID_VCI,DELTA_VCI,PVC_est,pvc_est_label,pvc_fuente,vci_max,vci_min,vci_modo}=c;
+  const{PAM,PP,iShock,SaFi,BSA,ATSVI,ATSVI_eco,DTSVI_est,atsvi_method,GC,GC_vti,gc_fuente,IC,FEVI_epss,FEVI_simp,FAC,CFA,CaO2,CvO2,DifCaV,DO2I,VO2I,DO2,VO2,O2ER,DeltaCO2,DepLac,RVS,CPO,IC_VCI,ID_VCI,DELTA_VCI,PVC_est,pvc_est_label,pvc_fuente,vci_max,vci_min,vci_modo}=c;
   const alerts=[];
   if(IC!==null&&IC<2.2)alerts.push({color:"red",icon:"⚠️",title:`IC bajo — ${IC} L/min/m²`,body:"Umbral shock cardiogénico · Evaluar inotrópico"});
   if(CPO!==null&&CPO<0.6)alerts.push({color:"red",icon:"⚠️",title:`CPO bajo — ${CPO} W`,body:"Predictor independiente mortalidad en shock"});
@@ -212,7 +220,12 @@ function HemoResults({c,v}){
     <div>
       {(GC||IC||FEVI_epss!==null||FEVI_simp!==null||FAC!==null||CFA!==null)&&<>
         <SL text="ECO — Función Sistólica"/><Card>
-          {(GC||IC)&&<div style={{marginBottom:10}}><G2>{GC&&<BM label="Gasto Cardíaco" value={GC} unit="L/min" color={GC>=4?T.green:GC>=3?T.yellow:T.red}/>}{IC&&<BM label="Índice Cardíaco" value={IC} unit="L/min/m²" color={IC>=2.5?T.green:IC>=2.2?T.yellow:T.red}/>}</G2></div>}
+          {(GC||IC)&&<div style={{marginBottom:10}}>
+            {gc_fuente&&<div style={{marginBottom:8,padding:"6px 10px",background:gc_fuente==="directo/ECMO"?"#FFF0F5":"#E0F2FE",borderRadius:8,fontSize:11,fontWeight:700,color:gc_fuente==="directo/ECMO"?"#C4004D":"#0E7490"}}>
+              {gc_fuente==="directo/ECMO"?"⚙️ GC directo / ECMO":"🫀 GC por eco VTI"}
+            </div>}
+            <G2>{GC&&<BM label="Gasto Cardíaco" value={GC} unit="L/min" color={GC>=4?T.green:GC>=3?T.yellow:T.red}/>}{IC&&<BM label="Índice Cardíaco" value={IC} unit="L/min/m²" color={IC>=2.5?T.green:IC>=2.2?T.yellow:T.red}/>}</G2>
+          </div>}
           {FEVI_epss!==null&&<Row label="FEVI por E/Septum" value={FEVI_epss} unit="%" color={FEVI_epss>=50?"green":FEVI_epss>=35?"yellow":"red"} normal="Meta ≥50%"/>}
           {FEVI_simp!==null&&<Row label="FEVI Simpson's" value={FEVI_simp} unit="%" color={FEVI_simp>=50?"green":FEVI_simp>=35?"yellow":"red"} normal="Meta ≥50%"/>}
           {FAC!==null&&<Row label="FAC — Fracción de Acortamiento" value={FAC} unit="%" color={FAC>=28?"green":FAC>=20?"yellow":"red"} normal="VN >28%"/>}
@@ -793,7 +806,7 @@ const TABS=[
   {id:"farmacos",icon:"💊",label:"Fármacos"},
 ];
 const INIT={
-  hemo:{fc:"",pas:"",pad:"",spo2:"",fio2_basic:"21",altura:"",peso:"",pao2:"",paco2:"",hco3a:"",sao2:"",pvco2:"",pvo2:"",svo2:"",hb:"",pvc:"",lactato1:"",lactato2:"",dtsvi:"",vti:"",epss:"",fevi_simpson:"",fac_dd:"",fac_ds:"",cfa_fd:"",cfa_fs:"",mapse:"",tapse:"",rvlv:"",vci_max:"",vci_min:"",vci_modo:"espontaneo"},
+  hemo:{fc:"",pas:"",pad:"",spo2:"",fio2_basic:"21",altura:"",peso:"",pao2:"",paco2:"",hco3a:"",sao2:"",pvco2:"",pvo2:"",svo2:"",hb:"",pvc:"",lactato1:"",lactato2:"",gc_directo:"",dtsvi:"",vti:"",epss:"",fevi_simpson:"",fac_dd:"",fac_ds:"",cfa_fd:"",cfa_fs:"",mapse:"",tapse:"",rvlv:"",vci_max:"",vci_min:"",vci_modo:"espontaneo"},
   vent:{sexo:"M",altura:"",vt:"",fr:"",peep:"",fio2:"",ppico:"",pplat:"",pao2:"",spo2:"",nif:"",p01:"",excursion_diaf:"",grosor_diaf:""},
   vexus:{vci_d:"",vci_col:"",portal_ip:"",renal_patron:"normal",hepatica:"normal"},
   neuro:{vps:"",vfd:"",vm:"",vm_aci:"",pam:"",dlm_a:"",dlm_b:""},
